@@ -5,3 +5,4 @@ gradio
 newspaper3k
 requests
 python-dotenv
+pytest
