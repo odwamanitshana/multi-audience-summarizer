@@ -15,6 +15,18 @@ HF Spaces:
 NOTE: The first Summarize click will download HuggingFace models.
       Set the HF_TOKEN env var for faster, authenticated downloads.
 
+Gradio 6+ compatibility notes:
+  - The `theme` parameter was moved from gr.Blocks() to demo.launch() in
+    Gradio 6.0.  Passing it to the constructor now emits a deprecation
+    warning and may be removed in a future release.
+  - Binding to 127.0.0.1 instead of 0.0.0.0 avoids the
+    httpx.RemoteProtocolError that occurs when an HTTP proxy intercepts
+    Gradio's internal startup self-check on some Windows setups.
+  - If you have a corporate or system HTTP proxy, set NO_PROXY in the
+    environment before launching:
+        $env:NO_PROXY = "localhost,127.0.0.1"
+        .\.venv\Scripts\python.exe app_gradio.py
+
 TODO: Deploy to HF Spaces (add app.py alias or Procfile).
 TODO: Abstract URL extraction and add rate-limit handling.
 """
@@ -254,9 +266,10 @@ def summarize_handler(
 # ---------------------------------------------------------------------------
 def build_ui() -> gr.Blocks:
     """Construct and return the Gradio Blocks app."""
+    # NOTE: theme is intentionally omitted here and passed to launch()
+    # instead, for Gradio 6+ compatibility (see module docstring).
     with gr.Blocks(
         title="Multi-Audience Summarizer",
-        theme=gr.themes.Soft(),  # type: ignore[attr-defined]
     ) as app:
         gr.Markdown(
             "## 📝 Multi-Audience Summarizer\n"
@@ -317,4 +330,12 @@ def build_ui() -> gr.Blocks:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     ui = build_ui()
-    ui.launch(server_name="0.0.0.0", server_port=7860, share=False)
+    # Bind to 127.0.0.1 (not 0.0.0.0) to prevent Gradio's internal httpx
+    # self-check from being intercepted by a system HTTP proxy on Windows.
+    # Theme is passed here — Gradio 6+ expects it in launch(), not Blocks().
+    ui.launch(
+        server_name="127.0.0.1",
+        server_port=7860,
+        share=False,
+        theme=gr.themes.Soft(),
+    )
