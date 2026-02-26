@@ -6,3 +6,17 @@ newspaper3k
 requests
 python-dotenv
 pytest
+
+# --- Pinned dev / CI versions (optional but recommended) ---
+# Uncomment below to lock exact versions for reproducibility:
+# transformers>=4.30,<5
+# torch>=2.0,<3
+# gradio>=4.0,<5
+# sentence-transformers>=2.2,<3
+# newspaper3k>=0.2.8
+# requests>=2.28
+# python-dotenv>=1.0
+# pytest>=7.4
+
+# Dev-only extras
+lxml_html_clean  # newspaper3k HTML cleanup dependency
