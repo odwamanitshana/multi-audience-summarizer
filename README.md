@@ -137,6 +137,21 @@ DEMO_MODEL="philschmid/bart-large-cnn-samsum" python app_gradio.py
 
 ---
 
+## Demo
+
+<!-- Replace the placeholder below once you capture real assets (see assets/demo_placeholder.md) -->
+
+![Demo GIF](assets/demo.gif)
+
+> **No GIF yet?** See [assets/demo_placeholder.md](assets/demo_placeholder.md) for
+> recording instructions using ScreenToGif, Peek, or ShareX.
+
+| Main UI | Results |
+|---------|---------|
+| ![Main](assets/screenshot_main.png) | ![Results](assets/screenshot_results.png) |
+
+---
+
 ## Additional run guides
 
 | Guide | Contents |
