@@ -22,3 +22,7 @@ Thumbs.db
 
 # VS Code
 .vscode/
+
+# Transient Gradio logs
+gradio_out.txt
+gradio_err.txt

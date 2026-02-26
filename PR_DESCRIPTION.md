@@ -24,8 +24,10 @@ pip install -r requirements.txt
 pytest -q
 
 # 3. Launch Gradio UI
+# (PowerShell) If behind a proxy, set NO_PROXY first:
+#   $env:NO_PROXY = "localhost,127.0.0.1"
 python app_gradio.py
-# Open http://localhost:7860
+# Open http://127.0.0.1:7860
 ```
 
 ### Acceptance criteria for reviewers
@@ -43,10 +45,11 @@ python app_gradio.py
 
 ### Notes
 
-- **Model downloads**: The first Summarize click downloads ~1.5 GB of HuggingFace models. Subsequent runs use the cache.
+- **Model downloads**: The first Summarize click downloads ~1.5 GB of HuggingFace models. Subsequent runs use the cache. Set `HF_TOKEN` for authenticated/faster downloads.
 - **Long inputs**: Articles over ~3 000 words are automatically chunked (sentence-boundary split), summarised per chunk, then aggregated into a final persona summary. This is a simple approach — see `TODO` comments in `helpers.py` for future improvements.
 - **CPU-only CI**: Tests mock all model calls so CI runs fast without GPU.
 - **URL extraction**: Uses `newspaper3k` if installed; graceful fallback message otherwise.
+- **Windows proxy note**: If Gradio's startup self-check fails behind a proxy, bind to `127.0.0.1` (already the default) and set `NO_PROXY="localhost,127.0.0.1"` in the environment.
 
 ### Reviewer checklist
 
