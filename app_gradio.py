@@ -25,7 +25,7 @@ Gradio 6+ compatibility notes:
   - If you have a corporate or system HTTP proxy, set NO_PROXY in the
     environment before launching:
         $env:NO_PROXY = "localhost,127.0.0.1"
-        .\.venv\Scripts\python.exe app_gradio.py
+        .\\.venv\\Scripts\\python.exe app_gradio.py
 
 TODO: Deploy to HF Spaces (add app.py alias or Procfile).
 TODO: Abstract URL extraction and add rate-limit handling.
