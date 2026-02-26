@@ -110,6 +110,59 @@ To deploy on [Hugging Face Spaces](https://huggingface.co/spaces):
 
 ---
 
+## Using `DEMO_MODEL` to override the default summariser
+
+Set the `DEMO_MODEL` environment variable **before** launching the app to swap
+the summarisation model without editing code:
+
+```powershell
+# Windows PowerShell
+$env:DEMO_MODEL = "philschmid/bart-large-cnn-samsum"   # smaller / faster
+.\.venv\Scripts\python.exe app_gradio.py
+```
+
+```bash
+# macOS / Linux
+DEMO_MODEL="philschmid/bart-large-cnn-samsum" python app_gradio.py
+```
+
+> The default model is `sshleifer/distilbart-cnn-12-6` (~1.2 GB).
+> Any HuggingFace `text2text-generation` or `summarization` pipeline-compatible
+> model string works.
+>
+> **To wire `DEMO_MODEL` into the codebase**, add
+> `os.environ.get("DEMO_MODEL", "sshleifer/distilbart-cnn-12-6")` where
+> `load_models()` is called in `app.py`. See [UI_HINTS.md](UI_HINTS.md) for
+> additional snippets.
+
+---
+
+## Demo
+
+<!-- Replace the placeholder below once you capture real assets (see assets/demo_placeholder.md) -->
+
+![Demo GIF](assets/demo.gif)
+
+> **No GIF yet?** See [assets/demo_placeholder.md](assets/demo_placeholder.md) for
+> recording instructions using ScreenToGif, Peek, or ShareX.
+
+| Main UI | Results |
+|---------|---------|
+| ![Main](assets/screenshot_main.png) | ![Results](assets/screenshot_results.png) |
+
+---
+
+## Additional run guides
+
+| Guide | Contents |
+|-------|----------|
+| [RUNNING_LOCALLY.md](RUNNING_LOCALLY.md) | Full local-run walkthrough (venv, proxy, troubleshooting) |
+| [UI_HINTS.md](UI_HINTS.md) | Gradio wiring snippets for examples widget & word count |
+| [QA_CHECKLIST.md](QA_CHECKLIST.md) | Cross-browser & accessibility testing checklist |
+| [RELEASE.md](RELEASE.md) | Release packaging & tag instructions |
+
+---
+
 ## Notes
 - The first run will download Hugging Face models (internet required).
 - Swap models in [app.py](app.py) if you want higher quality or speed.
