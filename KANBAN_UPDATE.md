@@ -1,7 +1,7 @@
 # KANBAN_UPDATE.md — Board Status
 
 **Date**: 2026-02-26
-**Branch**: `feature/closeout`
+**Branch**: `feature/kanban-closeout`
 **Repo**: multi-audience-summarizer
 
 ---
@@ -10,134 +10,93 @@
 
 | # | Card | Status |
 |---|------|--------|
-| 1 | Open PR for feature/ui-integration | **Done** |
-| 2 | Add GitHub Actions CI (pytest on PRs) | **Done** |
-| 3 | Implement helpers.py: chunking, aggregation, safe model wrappers | **Done** |
-| 4 | Expand tests: unit tests for helpers + CI improvements | **Done** |
-| 5 | Polish Gradio UI (word count, examples, loading UX, URL fallback) | **Done** |
-| 6 | Add per-persona sentiment visual polish | **Done** |
-| 7 | Add examples & input size handling | **Done** |
-| 8 | Create requirements.txt & local run docs | **Done** |
-| 9 | Deploy to Hugging Face Spaces (Gradio) | **In Progress** |
-| 10 | QA & cross-browser testing | **In Progress** |
-| 11 | Create demo assets (GIF/screenshots) & finalize README | **In Progress** |
-| 12 | Final submission packaging | **Not Started** |
+| 1 | Add examples & input size handling | **Done** |
+| 2 | Create requirements.txt & local run docs | **Done** |
+| 3 | Deploy to Hugging Face Spaces (Gradio) — guidance & DEMO_MODEL | **Done** |
+| 4 | QA & cross-browser testing — checklist & known issues | **Done** |
+| 5 | Create demo assets placeholder (GIF/screenshots) & update README | **Done** |
+| 6 | Final submission packaging — release checklist & tag instructions | **Done** |
 
 ---
 
 ## Detailed Card Breakdown
 
-### 1) Open PR for feature/ui-integration
+### 1) Add examples & input size handling
 - **Status**: Done
-- **Branch**: `feature/ui-integration`
+- **Branch**: `feature/kanban-closeout`
 - **Commits**:
-  - `b9af830` feat(ui): integrate summarizer + persona chooser; chunking and sentiment display
-  - `8229af9` fix(ui): move Gradio theme to launch() and bind to 127.0.0.1 to avoid startup self-check crash
-- **Files changed**: `app_gradio.py`, `helpers.py`, `PR_DESCRIPTION.md`
-- **Acceptance**: PR #2 merged to main via GitHub.
-- **Verify**: `git log --oneline origin/feature/ui-integration`
+  - `fe7877d` chore(samples): add UI examples_for_ui.txt
+  - `967b1ea` docs(ui): add UI_HINTS.md with example wiring snippet and input-size guidance
+- **Files added**:
+  - `samples/examples_for_ui.txt` — 6 short article examples (one per line)
+  - `UI_HINTS.md` — Gradio wiring snippets for `gr.Examples`, live word count, and size warnings
+- **Acceptance**: examples file present; UI_HINTS.md contains clear snippet for examples widget, live word count, and size warning text
+- **Verify**: `cat samples/examples_for_ui.txt` (6 lines); `cat UI_HINTS.md` (5 snippets)
 
-### 2) Add GitHub Actions CI (pytest on PRs)
+### 2) Create requirements.txt & local run docs
 - **Status**: Done
-- **Branch**: `feature/ui-integration`
+- **Branch**: `feature/kanban-closeout`
 - **Commits**:
-  - `b9af830` (included CI workflow in the integration PR)
-- **Files changed**: `.github/workflows/ci.yml`
-- **Acceptance**: Workflow triggers on push & pull_request for main and feature/*.
-- **Verify**: Check `.github/workflows/ci.yml` exists; push and watch Actions tab.
+  - `ae63e12` docs: pin dev reqs and add RUNNING_LOCALLY.md with NO_PROXY & DEMO_MODEL guidance
+- **Files changed/added**:
+  - `requirements.txt` — appended pinned dev block and lxml_html_clean dependency
+  - `RUNNING_LOCALLY.md` — full local-run guide (venv, activation, proxy, DEMO_MODEL, troubleshooting)
+- **Acceptance**: requirements.txt has base + dev pins; RUNNING_LOCALLY.md covers Windows & POSIX commands, NO_PROXY, DEMO_MODEL, troubleshooting table
+- **Verify**: `cat requirements.txt`; `cat RUNNING_LOCALLY.md`
 
-### 3) Implement helpers.py: chunking, aggregation, safe model wrappers
+### 3) Deploy to Hugging Face Spaces (Gradio) — guidance & DEMO_MODEL
 - **Status**: Done
-- **Branch**: `feature/ui-integration`
+- **Branch**: `feature/kanban-closeout`
 - **Commits**:
-  - `b9af830` feat(ui): integrate summarizer + persona chooser; chunking and sentiment display
-- **Files changed**: `helpers.py`
-- **Acceptance**: `chunk_text`, `chunk_and_summarize`, `estimate_token_count`, `safe_load_models`, `extract_article_from_url` all implemented with docstrings and TODOs.
-- **Verify**: `python -c "from helpers import chunk_text, chunk_and_summarize; print('OK')"`
+  - `a9783e8` docs: add Hugging Face Spaces guidance and DEMO_MODEL option
+- **Files changed**:
+  - `README.md` — appended "Using DEMO_MODEL" section with env var usage, wiring instructions, model compatibility note
+- **Acceptance**: README contains DEMO_MODEL usage examples for Windows & POSIX, entrypoint explanation, HF_TOKEN note, model compatibility note
+- **Verify**: Search README.md for "DEMO_MODEL"
 
-### 4) Expand tests: unit tests for helpers + CI improvements
+### 4) QA & cross-browser testing — checklist & known issues
 - **Status**: Done
-- **Branch**: `feature/closeout`
+- **Branch**: `feature/kanban-closeout`
 - **Commits**:
-  - `5a56d09` test: add tests for helpers (chunking, token estimate, safe load)
-- **Files changed**: `tests/test_helpers.py`
-- **Acceptance**: 22 new tests covering `estimate_token_count`, `chunk_text`, `chunk_and_summarize`, `safe_load_models`, and `extract_article_from_url`. All mocked, no model downloads.
-- **Verify**: `pytest tests/test_helpers.py -q` (22 passed)
+  - `bc38c4d` chore(qa): add cross-browser QA checklist and repro steps
+- **Files added**:
+  - `QA_CHECKLIST.md` — 10-item browser matrix, 5 functional tests, accessibility checks, mobile/responsive, performance baselines, known issues, reporting template
+- **Acceptance**: Checklist covers Chrome/Firefox/Edge/Safari/Mobile; functional tests include short/long/URL/empty/single-persona; accessibility section with tools; known issues table
+- **Verify**: `cat QA_CHECKLIST.md`
 
-### 5) Polish Gradio UI (word count, examples, loading UX, URL fallback)
+### 5) Create demo assets placeholder (GIF/screenshots) & update README
 - **Status**: Done
-- **Branch**: `feature/ui-integration`
+- **Branch**: `feature/kanban-closeout`
 - **Commits**:
-  - `b9af830` feat(ui): integrate summarizer + persona chooser; chunking and sentiment display
-  - `8229af9` fix(ui): move Gradio theme to launch() and bind to 127.0.0.1
-- **Files changed**: `app_gradio.py`
-- **Acceptance**: Word count display, example articles loaded from samples, URL textbox with graceful fallback, long-input chunking notice, NO_PROXY comments.
-- **Verify**: `python app_gradio.py` → open http://127.0.0.1:7860 → check Examples section, paste text, see word count in output.
+  - `879d03d` docs: add demo assets placeholder and README reference
+- **Files changed/added**:
+  - `assets/demo_placeholder.md` — recording instructions (ScreenToGif, Peek, ShareX), naming conventions, README snippet
+  - `README.md` — appended Demo section referencing `assets/demo.gif` and screenshot table
+- **Acceptance**: README has Demo section with GIF and screenshot image references; placeholder has recording instructions
+- **Verify**: Search README.md for "demo.gif"; `cat assets/demo_placeholder.md`
 
-### 6) Add per-persona sentiment visual polish
+### 6) Final submission packaging — release checklist & tag instructions
 - **Status**: Done
-- **Branch**: `feature/ui-integration`
+- **Branch**: `feature/kanban-closeout`
 - **Commits**:
-  - `b9af830` feat(ui): integrate summarizer + persona chooser; chunking and sentiment display
-- **Files changed**: `app_gradio.py` (function `_sentiment_badge`)
-- **Acceptance**: Sentiment label + emoji (✅/❌/⚠️) + score rendered per persona summary. Tooltip note about approximation included.
-- **Verify**: Launch UI → Summarize → check each persona section has a colored sentiment badge.
+  - `a0d7e72` chore(release): add release checklist and packaging instructions
+- **Files added**:
+  - `RELEASE.md` — pre-release checklist, step-by-step release (branch, test, tag, push, GitHub release, zip), verification commands, versioning scheme, rollback instructions
+- **Acceptance**: RELEASE.md covers creating release branch, running tests, tagging (`git tag -a vX.Y.Z`), pushing tags, producing release zip, verification commands
+- **Verify**: `cat RELEASE.md`
 
-### 7) Add examples & input size handling
-- **Status**: Done (part of UI polish)
-- **Branch**: `feature/ui-integration`
-- **Files changed**: `app_gradio.py`, `samples/sample_articles.txt`
-- **Acceptance**: Up to 3 example articles loaded from `samples/sample_articles.txt` into `gr.Examples`. Long-input notice for articles > 3000 words.
-- **Verify**: Launch UI → scroll to "Example articles" section.
+---
 
-### 8) Create requirements.txt & local run docs
-- **Status**: Done
-- **Branch**: `feature/closeout`
-- **Commits**:
-  - `507f0d1` docs: document NO_PROXY, first-run model-download caveats, local run steps and HF Spaces notes
-- **Files changed**: `README.md`, `PR_DESCRIPTION.md`, `requirements.txt` (already existed)
-- **Acceptance**: README includes venv setup, install, test, and launch commands for both Windows and macOS/Linux. NO_PROXY guidance included.
-- **Verify**: Follow README "Running locally" section end-to-end.
+## Additional context
 
-### 9) Deploy to Hugging Face Spaces (Gradio)
-- **Status**: In Progress
-- **Branch**: `feature/closeout` (guidance added), `feature/hf-spaces` (not yet created)
-- **Commits**:
-  - `507f0d1` docs: HF Spaces guidance section added to README
-- **Files changed**: `README.md`
-- **Remaining**:
-  - Create HF-compatible entrypoint alias (`app.py` or `Procfile`)
-  - Test build on HF Spaces with CPU runtime
-  - Verify model cache behavior across Space restarts
-- **Verify**: Follow README "Hugging Face Spaces" section.
+### Helper unit tests (pre-existing)
+- **File**: `tests/test_helpers.py` (291 lines, 22 tests)
+- **Coverage**: `estimate_token_count`, `chunk_text`, `chunk_and_summarize` (with mock summarizer), `safe_load_models`, `extract_article_from_url`
+- **Note**: Already existed on parent branch `feature/closeout`; not modified by this branch
 
-### 10) QA & cross-browser testing
-- **Status**: In Progress
-- **Remaining**:
-  - Test on Chrome, Firefox, Edge; test mobile viewport.
-  - Validate accessibility basics (labels, tab order).
-  - Test example inputs, long-input chunking, and proxy/no-proxy behavior.
-  - Fix any UI glitches found during QA.
-- **Verify**: Open http://127.0.0.1:7860 in each browser. Paste text, click Summarize, check all persona panels render.
-
-### 11) Create demo assets (GIF/screenshots) & finalize README
-- **Status**: In Progress
-- **Branch**: `feature/closeout`
-- **Files changed**: `assets/demo_placeholder.md` (created)
-- **Remaining**:
-  - Capture GIF/video of the UI workflow
-  - Add annotated screenshots to README
-  - Replace placeholder with real assets
-- **Verify**: Check `assets/` directory for demo files.
-
-### 12) Final submission packaging
-- **Status**: Not Started
-- **Remaining**:
-  - Verify all requirements, tests, and CI passing
-  - Tag release (`git tag -a v0.1.0 -m "..."`)
-  - Create release notes
-  - Zip or prepare repo for submission
-- **Verify**: `git tag -l` shows v0.1.0; all CI checks green.
+### Test results
+- **31 passed** in 13.39s (pytest -q)
+- No failures, no warnings
 
 ---
 
@@ -153,13 +112,11 @@ pytest -q
 # Run only helper tests
 pytest tests/test_helpers.py -q
 
+# Check new files
+git diff --name-only feature/closeout..feature/kanban-closeout
+
 # Launch Gradio UI
 $env:NO_PROXY = "localhost,127.0.0.1"
 .\.venv\Scripts\python.exe app_gradio.py
 # Open http://127.0.0.1:7860
-
-# Check git state
-git log --oneline -n 10
-git branch -a
-git status
 ```
