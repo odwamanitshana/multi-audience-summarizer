@@ -103,8 +103,8 @@ sh tools/lint-quick.sh
 
 ## Push & PR
 
-- **Branch pushed**: `origin/feature/backlog-finalize`
-- **PR draft**: created via `gh pr create` (or manual URL below)
+- **Branch pushed**: `origin/feature/backlog-finalize` (SHA `fe1d90d`)
+- **PR created**: https://github.com/odwamanitshana/multi-audience-summarizer/pull/5 (draft)
 - **Manual PR URL**: https://github.com/odwamanitshana/multi-audience-summarizer/pull/new/feature/backlog-finalize
 
 To create PR manually:
