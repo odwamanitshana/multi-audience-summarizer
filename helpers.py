@@ -16,8 +16,12 @@ Functions:
 from __future__ import annotations
 
 import logging
+import html
 import re
 from typing import Any, Callable, Dict, List, Optional, Tuple
+from urllib.parse import urlparse
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -210,6 +214,35 @@ def safe_load_models(device: Optional[str] = None) -> Tuple[Any, Any]:
 
 
 # ── URL extraction (best-effort) ──────────────────────────────────────────
+def _extract_paragraphs_from_html(raw_html: str, min_chars: int = 80) -> str:
+    """Best-effort article text extraction from raw HTML.
+
+    This fallback is intentionally lightweight to avoid adding heavy parser
+    dependencies. It extracts visible paragraph-like content and discards short
+    boilerplate lines.
+    """
+    if not raw_html:
+        return ""
+
+    cleaned = re.sub(r"(?is)<(script|style|noscript)[^>]*>.*?</\1>", " ", raw_html)
+    blocks = re.findall(r"(?is)<p[^>]*>(.*?)</p>", cleaned)
+
+    paragraphs: List[str] = []
+    for block in blocks:
+        text = re.sub(r"<[^>]+>", " ", block)
+        text = html.unescape(re.sub(r"\s+", " ", text)).strip()
+        if len(text) >= min_chars:
+            paragraphs.append(text)
+
+    if paragraphs:
+        return "\n\n".join(paragraphs)
+
+    # Last-resort fallback: strip all tags and return first substantial chunk.
+    text_only = re.sub(r"<[^>]+>", " ", cleaned)
+    text_only = html.unescape(re.sub(r"\s+", " ", text_only)).strip()
+    return text_only[:4000] if text_only else ""
+
+
 def extract_article_from_url(url: str) -> str:
     """Try to pull article body from *url* using newspaper3k.
 
@@ -217,17 +250,50 @@ def extract_article_from_url(url: str) -> str:
 
     TODO: Add rate-limit handling and timeout before deploying to HF Spaces.
     """
-    try:
-        from newspaper import Article  # type: ignore[import-untyped]
-    except ImportError:
-        logger.warning("newspaper3k not installed — cannot extract URL.")
+    parsed = urlparse((url or "").strip())
+    if parsed.scheme not in {"http", "https"}:
+        logger.warning("Invalid URL scheme for extraction: %s", url)
         return ""
 
+    # 1) Try newspaper3k first (best quality on supported pages).
     try:
-        article = Article(url)
+        from newspaper import Article, Config  # type: ignore[import-untyped]
+
+        cfg = Config()
+        cfg.browser_user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/122.0 Safari/537.36"
+        )
+        cfg.request_timeout = 15
+
+        article = Article(url, config=cfg)
         article.download()
         article.parse()
-        return (article.text or "").strip()
+        text = (article.text or "").strip()
+        if text:
+            return text
+    except ImportError:
+        logger.warning("newspaper3k not installed — trying HTTP fallback extraction.")
     except Exception as exc:  # noqa: BLE001
-        logger.warning("URL extraction failed for %s: %s", url, exc)
+        logger.warning("newspaper extraction failed for %s: %s", url, exc)
+
+    # 2) HTTP fetch fallback + lightweight paragraph extraction.
+    try:
+        response = requests.get(
+            url,
+            timeout=20,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/122.0 Safari/537.36"
+                )
+            },
+        )
+        response.raise_for_status()
+        extracted = _extract_paragraphs_from_html(response.text)
+        return extracted.strip()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("HTTP fallback extraction failed for %s: %s", url, exc)
         return ""
