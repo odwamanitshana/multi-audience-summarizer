@@ -11,7 +11,7 @@ Follow these steps to cut a release of **Multi-Audience Summarizer**.
 - [ ] GitHub Actions CI is green on `main`
 - [ ] `requirements.txt` is up-to-date
 - [ ] README.md has current instructions and demo assets
-- [ ] KANBAN_UPDATE.md shows all cards as **Done**
+- [ ] docs/archive/KANBAN_UPDATE.md shows all cards as **Done**
 - [ ] No `TODO` / `FIXME` left in production code (optional: search with `grep -rn "TODO\|FIXME" *.py`)
 - [ ] CHANGELOG or PR description covers all changes since last release
 

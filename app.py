@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Persona-aware summarizer prototype.
 
 Usage:
@@ -7,10 +5,13 @@ Usage:
 - Run tests: pip install -r requirements.txt ; pytest -q
 """
 
+from __future__ import annotations
+
 import argparse
 import json
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Tuple, Union, cast
+from typing import Any, cast
 
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
@@ -30,13 +31,11 @@ PERSONA_TEMPLATES = {
         "You are a helpful tutor. Summarize in clear, structured bullets and "
         "explain any jargon briefly."
     ),
-    "casual": (
-        "You are chatting with a friend. Summarize in a relaxed, accessible tone."
-    ),
+    "casual": ("You are chatting with a friend. Summarize in a relaxed, accessible tone."),
 }
 
 # TODO: Tune these persona presets as you iterate on prompt design.
-PERSONA_PRESETS: Dict[str, Dict[str, float | int]] = {
+PERSONA_PRESETS: dict[str, dict[str, float | int]] = {
     "executive": {
         "max_length": 110,
         "min_length": 40,
@@ -63,7 +62,7 @@ def detect_device() -> str:
     return "cuda" if torch.cuda.is_available() else "cpu"
 
 
-SummarizerType = Union[Callable[..., Any], Dict[str, Any]]
+SummarizerType = Callable[..., Any] | dict[str, Any]
 
 
 def load_models(device: str | None = None):
@@ -165,7 +164,7 @@ def summarize_with_persona(
     return ""
 
 
-def sentiment_for_text(sentiment_model, text: str) -> Tuple[str, float]:
+def sentiment_for_text(sentiment_model, text: str) -> tuple[str, float]:
     """Return sentiment label and score for a given text."""
     result = sentiment_model(text[:1000])  # light truncation for speed/safety
     if isinstance(result, list) and result:
@@ -192,7 +191,7 @@ def _read_sample_text() -> str:
     )
 
 
-def _read_samples(samples_file: str) -> List[str]:
+def _read_samples(samples_file: str) -> list[str]:
     """Read sample lines from a file; fallback to a single sample string."""
     sample_path = Path(samples_file)
     if sample_path.exists():
@@ -235,9 +234,7 @@ def run_and_save_all(
                     num_beams=int(preset["num_beams"]),
                     length_penalty=float(preset["length_penalty"]),
                 )
-                label, score = sentiment_for_text(
-                    sentiment_model, summary or sample
-                )
+                label, score = sentiment_for_text(sentiment_model, summary or sample)
                 record = {
                     "article_id": article_id,
                     "persona": persona,

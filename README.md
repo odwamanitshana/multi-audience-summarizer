@@ -96,7 +96,6 @@ To deploy on [Hugging Face Spaces](https://huggingface.co/spaces):
    transformers>=4.30
    torch>=2.0
    gradio>=4.0
-   sentence-transformers
    newspaper3k
    ```
 
@@ -158,7 +157,7 @@ DEMO_MODEL="philschmid/bart-large-cnn-samsum" python app_gradio.py
 |-------|----------|
 | [RUNNING_LOCALLY.md](RUNNING_LOCALLY.md) | Full local-run walkthrough (venv, proxy, troubleshooting) |
 | [UI_HINTS.md](UI_HINTS.md) | Gradio wiring snippets for examples widget & word count |
-| [QA_CHECKLIST.md](QA_CHECKLIST.md) | Cross-browser & accessibility testing checklist |
+| [docs/archive/QA_CHECKLIST.md](docs/archive/QA_CHECKLIST.md) | Cross-browser & accessibility testing checklist (archived) |
 | [RELEASE.md](RELEASE.md) | Release packaging & tag instructions |
 
 ---
@@ -168,4 +167,4 @@ DEMO_MODEL="philschmid/bart-large-cnn-samsum" python app_gradio.py
 - Swap models in [app.py](app.py) if you want higher quality or speed.
 - Tests are fully mocked — no GPU or model downloads needed for `pytest`.
 - Long articles (>3 000 words) are automatically chunked and summarized in multiple passes.
-- See [PR_DESCRIPTION.md](PR_DESCRIPTION.md) for the full change log and reviewer checklist.
+- Historical process notes live under [docs/archive/](docs/archive/).

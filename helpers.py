@@ -17,7 +17,8 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +34,10 @@ DEFAULT_MAX_CHUNK_WORDS: int = 800
 # ---------------------------------------------------------------------------
 # Fallback persona presets (mirrors PERSONA_PRESETS in app.py)
 # ---------------------------------------------------------------------------
-_FALLBACK_PRESETS: Dict[str, Dict[str, float]] = {
+_FALLBACK_PRESETS: dict[str, dict[str, float]] = {
     "executive": {"max_length": 110, "min_length": 40, "num_beams": 4, "length_penalty": 1.0},
-    "student":   {"max_length": 200, "min_length": 80, "num_beams": 4, "length_penalty": 0.9},
-    "casual":    {"max_length": 60,  "min_length": 15, "num_beams": 2, "length_penalty": 1.2},
+    "student": {"max_length": 200, "min_length": 80, "num_beams": 4, "length_penalty": 0.9},
+    "casual": {"max_length": 60, "min_length": 15, "num_beams": 2, "length_penalty": 1.2},
 }
 
 
@@ -51,7 +52,7 @@ def estimate_token_count(text: str) -> int:
 
 
 # ── Chunking ──────────────────────────────────────────────────────────────
-def chunk_text(text: str, max_words: int = DEFAULT_MAX_CHUNK_WORDS) -> List[str]:
+def chunk_text(text: str, max_words: int = DEFAULT_MAX_CHUNK_WORDS) -> list[str]:
     """Split *text* into chunks of roughly *max_words* words each.
 
     The splitter tries to break on sentence boundaries (period / newline)
@@ -61,10 +62,10 @@ def chunk_text(text: str, max_words: int = DEFAULT_MAX_CHUNK_WORDS) -> List[str]
     TODO: Consider an extractive first step to drop low-info sentences.
     """
     # Split into sentences (simple regex; good enough for news text).
-    sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
 
-    chunks: List[str] = []
-    current_chunk: List[str] = []
+    chunks: list[str] = []
+    current_chunk: list[str] = []
     current_words = 0
 
     for sentence in sentences:
@@ -97,10 +98,10 @@ def chunk_and_summarize(
     article_text: str,
     persona: str,
     summarizer: Any,
-    persona_preset: Optional[Dict[str, float]] = None,
+    persona_preset: dict[str, float] | None = None,
     max_chunk_words: int = DEFAULT_MAX_CHUNK_WORDS,
     *,
-    _summarize_fn: Optional[Callable[..., str]] = None,
+    _summarize_fn: Callable[..., str] | None = None,
 ) -> str:
     """Chunk a long article, summarise each chunk, then aggregate.
 
@@ -122,8 +123,7 @@ def chunk_and_summarize(
             from app import summarize_with_persona
         except ImportError:
             raise RuntimeError(
-                "Cannot import summarize_with_persona from app.py.  "
-                "Ensure app.py is on PYTHONPATH."
+                "Cannot import summarize_with_persona from app.py.  Ensure app.py is on PYTHONPATH."
             )
         _summarize_fn = summarize_with_persona
 
@@ -145,7 +145,7 @@ def chunk_and_summarize(
 
     # --- Pass 1: summarise each chunk individually --------------------------
     logger.info("Chunking article into %d parts for persona '%s'", len(chunks), persona)
-    chunk_summaries: List[str] = []
+    chunk_summaries: list[str] = []
 
     for i, chunk in enumerate(chunks):
         logger.debug("  Summarising chunk %d/%d (%d words)", i + 1, len(chunks), len(chunk.split()))
@@ -167,7 +167,9 @@ def chunk_and_summarize(
 
     # --- Pass 2: aggregate chunk summaries into one final summary -----------
     merged = " ".join(chunk_summaries)
-    logger.info("Aggregating %d chunk summaries (%d words total)", len(chunk_summaries), len(merged.split()))
+    logger.info(
+        "Aggregating %d chunk summaries (%d words total)", len(chunk_summaries), len(merged.split())
+    )
 
     aggregated = _summarize_fn(
         summarizer,
@@ -182,7 +184,7 @@ def chunk_and_summarize(
 
 
 # ── Safe model loader ─────────────────────────────────────────────────────
-def safe_load_models(device: Optional[str] = None) -> Tuple[Any, Any]:
+def safe_load_models(device: str | None = None) -> tuple[Any, Any]:
     """Call app.load_models with automatic CPU fallback.
 
     If CUDA is requested but fails, retries on CPU.  Logs the device used.
@@ -191,8 +193,7 @@ def safe_load_models(device: Optional[str] = None) -> Tuple[Any, Any]:
         from app import load_models
     except ImportError:
         raise RuntimeError(
-            "Cannot import load_models from app.py. "
-            "Ensure app.py is in the project root."
+            "Cannot import load_models from app.py. Ensure app.py is in the project root."
         )
 
     try:

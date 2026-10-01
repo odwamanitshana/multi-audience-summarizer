@@ -1,0 +1,33 @@
+[project]
+name = "multi-audience-summarizer"
+version = "0.0.0"
+description = "Persona-aware article summarizer with Gradio UI"
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["."]
+extend-exclude = ["docs/archive"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "W",
+]
+ignore = [
+    "E501",  # line length handled by formatter where practical
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011", "E731"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

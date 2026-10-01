@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import gradio as gr
 
@@ -47,7 +47,6 @@ logger = logging.getLogger(__name__)
 try:
     from app import (
         PERSONA_PRESETS,
-        PERSONA_TEMPLATES,
         load_models,
         sentiment_for_text,
         summarize_with_persona,
@@ -62,7 +61,6 @@ except ImportError as exc:
 try:
     from helpers import (
         chunk_and_summarize,
-        estimate_token_count,
         extract_article_from_url,
         safe_load_models,
     )
@@ -70,26 +68,23 @@ except ImportError:
     # helpers.py missing — define inline stubs so the UI still works.
     logger.warning("helpers.py not found; chunking and URL extraction disabled.")
 
-    def estimate_token_count(text: str) -> int:  # type: ignore[misc]
-        return int(len(text.split()) * 1.3)
-
     def chunk_and_summarize(*a: Any, **kw: Any) -> str:  # type: ignore[misc]
         return ""
 
     def extract_article_from_url(url: str) -> str:  # type: ignore[misc]
         return ""
 
-    def safe_load_models(device: Any = None) -> Tuple[Any, Any]:  # type: ignore[misc]
+    def safe_load_models(device: Any = None) -> tuple[Any, Any]:  # type: ignore[misc]
         return load_models(device=device)
 
 
 # ---------------------------------------------------------------------------
 # Fallback presets (used only when PERSONA_PRESETS is unavailable)
 # ---------------------------------------------------------------------------
-_DEFAULT_PRESETS: Dict[str, Dict[str, float]] = {
+_DEFAULT_PRESETS: dict[str, dict[str, float]] = {
     "executive": {"max_length": 110, "min_length": 40, "num_beams": 4, "length_penalty": 1.0},
-    "student":   {"max_length": 200, "min_length": 80, "num_beams": 4, "length_penalty": 0.9},
-    "casual":    {"max_length": 60,  "min_length": 15, "num_beams": 2, "length_penalty": 1.2},
+    "student": {"max_length": 200, "min_length": 80, "num_beams": 4, "length_penalty": 0.9},
+    "casual": {"max_length": 60, "min_length": 15, "num_beams": 2, "length_penalty": 1.2},
 }
 
 # Threshold (in words) above which we use chunk-then-aggregate summarisation.
@@ -103,7 +98,7 @@ _summarizer: Any = None
 _sentiment_model: Any = None
 
 
-def _ensure_models() -> Tuple[Any, Any]:
+def _ensure_models() -> tuple[Any, Any]:
     """Load models once on first call (lazy init keeps startup fast)."""
     global _summarizer, _sentiment_model
     if _summarizer is None or _sentiment_model is None:
@@ -114,10 +109,10 @@ def _ensure_models() -> Tuple[Any, Any]:
 # ---------------------------------------------------------------------------
 # Load example inputs from samples file
 # ---------------------------------------------------------------------------
-def _load_examples(max_examples: int = 3) -> List[List[str]]:
+def _load_examples(max_examples: int = 3) -> list[list[str]]:
     """Read the first non-URL, non-empty lines from sample_articles.txt."""
     sample_path = Path("samples") / "sample_articles.txt"
-    examples: List[List[str]] = []
+    examples: list[list[str]] = []
     if sample_path.exists():
         for line in sample_path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
@@ -153,10 +148,7 @@ def _sentiment_badge(label: str, score: float) -> str:
         emoji, colour = "❌", "#c62828"
     else:
         emoji, colour = "⚠️", "#757575"
-    return (
-        f'<span style="color:{colour}; font-weight:600">'
-        f"{emoji} {label} — {score:.2f}</span>"
-    )
+    return f'<span style="color:{colour}; font-weight:600">{emoji} {label} — {score:.2f}</span>'
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +157,7 @@ def _sentiment_badge(label: str, score: float) -> str:
 def summarize_handler(
     article_text: str,
     url_text: str,
-    selected_personas: List[str],
+    selected_personas: list[str],
 ) -> str:
     """Run summarisation + sentiment for each selected persona, return HTML.
 
@@ -203,7 +195,7 @@ def summarize_handler(
     word_count = len(text.split())
     is_long = word_count > _LONG_INPUT_WORD_THRESHOLD
 
-    parts: List[str] = [
+    parts: list[str] = [
         f"<p><b>Original word count:</b> {word_count}"
         + (" ⚠️ <em>Long input — chunked summarisation enabled</em>" if is_long else "")
         + "</p>"

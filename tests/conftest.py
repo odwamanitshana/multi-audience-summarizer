@@ -88,7 +88,5 @@ def dummy_models(monkeypatch):
     dummy_sum = _make_dummy_summarizer()
     dummy_sent = _make_dummy_sentiment()
 
-    monkeypatch.setattr(
-        app, "load_models", lambda device=None: (dummy_sum, dummy_sent)
-    )
+    monkeypatch.setattr(app, "load_models", lambda device=None: (dummy_sum, dummy_sent))
     return dummy_sum, dummy_sent
