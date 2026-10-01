@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 import pytest
 
@@ -18,7 +18,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from helpers import (
-    DEFAULT_MAX_CHUNK_WORDS,
     chunk_and_summarize,
     chunk_text,
     estimate_token_count,
@@ -26,10 +25,10 @@ from helpers import (
     safe_load_models,
 )
 
-
 # ---------------------------------------------------------------------------
 # estimate_token_count
 # ---------------------------------------------------------------------------
+
 
 class TestEstimateTokenCount:
     """estimate_token_count should return a reasonable heuristic value."""
@@ -60,6 +59,7 @@ class TestEstimateTokenCount:
 # ---------------------------------------------------------------------------
 # chunk_text
 # ---------------------------------------------------------------------------
+
 
 class TestChunkText:
     """chunk_text should split text respecting word limits and sentence boundaries."""
@@ -122,13 +122,14 @@ class TestChunkText:
 # chunk_and_summarize (mocked summarizer)
 # ---------------------------------------------------------------------------
 
+
 class TestChunkAndSummarize:
     """chunk_and_summarize should call the summarizer per-chunk then aggregate."""
 
     @staticmethod
     def _make_tracking_summarizer() -> tuple:
         """Return (mock_fn, call_log) where call_log records each invocation."""
-        call_log: List[dict] = []
+        call_log: list[dict] = []
 
         def mock_summarize(
             summarizer: Any,
@@ -139,12 +140,14 @@ class TestChunkAndSummarize:
             num_beams: int = 4,
             length_penalty: float = 1.0,
         ) -> str:
-            call_log.append({
-                "text_len": len(text.split()),
-                "persona": persona,
-                "max_length": max_length,
-                "min_length": min_length,
-            })
+            call_log.append(
+                {
+                    "text_len": len(text.split()),
+                    "persona": persona,
+                    "max_length": max_length,
+                    "min_length": min_length,
+                }
+            )
             # Return a deterministic short summary.
             return f"[summary-{len(call_log)}]"
 
@@ -154,8 +157,15 @@ class TestChunkAndSummarize:
         mock_fn, log = self._make_tracking_summarizer()
         text = "A short article about cats and dogs."
         result = chunk_and_summarize(
-            text, "executive", "fake_summarizer",
-            persona_preset={"max_length": 110, "min_length": 40, "num_beams": 4, "length_penalty": 1.0},
+            text,
+            "executive",
+            "fake_summarizer",
+            persona_preset={
+                "max_length": 110,
+                "min_length": 40,
+                "num_beams": 4,
+                "length_penalty": 1.0,
+            },
             max_chunk_words=100,
             _summarize_fn=mock_fn,
         )
@@ -166,15 +176,19 @@ class TestChunkAndSummarize:
     def test_long_text_multi_chunk(self):
         mock_fn, log = self._make_tracking_summarizer()
         # Build text with 3 clear chunks (each ~40 words).
-        chunk_text_parts = [
-            " ".join([f"word{i}" for i in range(40)]) + "."
-            for _ in range(3)
-        ]
+        chunk_text_parts = [" ".join([f"word{i}" for i in range(40)]) + "." for _ in range(3)]
         long_text = " ".join(chunk_text_parts)
 
         result = chunk_and_summarize(
-            long_text, "student", "fake_summarizer",
-            persona_preset={"max_length": 200, "min_length": 80, "num_beams": 4, "length_penalty": 0.9},
+            long_text,
+            "student",
+            "fake_summarizer",
+            persona_preset={
+                "max_length": 200,
+                "min_length": 80,
+                "num_beams": 4,
+                "length_penalty": 0.9,
+            },
             max_chunk_words=50,
             _summarize_fn=mock_fn,
         )
@@ -188,8 +202,15 @@ class TestChunkAndSummarize:
         # 200 words → should be chunked into multiple pieces with max_chunk_words=50.
         long_text = " ".join(["word"] * 200) + "."
         chunk_and_summarize(
-            long_text, "casual", "fake_summarizer",
-            persona_preset={"max_length": 60, "min_length": 15, "num_beams": 2, "length_penalty": 1.2},
+            long_text,
+            "casual",
+            "fake_summarizer",
+            persona_preset={
+                "max_length": 60,
+                "min_length": 15,
+                "num_beams": 2,
+                "length_penalty": 1.2,
+            },
             max_chunk_words=50,
             _summarize_fn=mock_fn,
         )
@@ -204,7 +225,9 @@ class TestChunkAndSummarize:
         mock_fn, log = self._make_tracking_summarizer()
         text = " ".join(["word"] * 200) + "."
         chunk_and_summarize(
-            text, "executive", "fake_summarizer",
+            text,
+            "executive",
+            "fake_summarizer",
             max_chunk_words=50,
             _summarize_fn=mock_fn,
         )
@@ -216,13 +239,19 @@ class TestChunkAndSummarize:
 # safe_load_models (mocked app.load_models)
 # ---------------------------------------------------------------------------
 
+
 class TestSafeLoadModels:
     """safe_load_models should handle CPU fallback gracefully."""
 
     def test_successful_load(self, monkeypatch):
         import app
-        dummy_sum = lambda *a, **k: "summary"
-        dummy_sent = lambda *a, **k: ("POSITIVE", 0.9)
+
+        def dummy_sum(*_a, **_k):
+            return "summary"
+
+        def dummy_sent(*_a, **_k):
+            return ("POSITIVE", 0.9)
+
         monkeypatch.setattr(app, "load_models", lambda device=None: (dummy_sum, dummy_sent))
 
         s, sent = safe_load_models(device="cpu")
@@ -232,7 +261,7 @@ class TestSafeLoadModels:
     def test_cpu_fallback_on_cuda_failure(self, monkeypatch):
         import app
 
-        call_log: List[str] = []
+        call_log: list[str] = []
 
         def mock_load(device=None):
             call_log.append(device or "auto")
@@ -275,6 +304,7 @@ class TestSafeLoadModels:
 # ---------------------------------------------------------------------------
 # extract_article_from_url (mocked newspaper)
 # ---------------------------------------------------------------------------
+
 
 class TestExtractArticleFromUrl:
     """extract_article_from_url should fail gracefully without network."""

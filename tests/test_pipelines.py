@@ -8,8 +8,7 @@ Run:  pytest -q
 
 import pytest
 
-from app import summarize_with_persona, sentiment_for_text
-
+from app import sentiment_for_text, summarize_with_persona
 
 # ── Word-count bounds per persona (intentionally loose) ──────────────────
 WORD_BOUNDS = {
@@ -31,9 +30,7 @@ class TestSummarizeNonEmpty:
     """summarize_with_persona must return a non-empty string for every persona."""
 
     @pytest.mark.parametrize("persona", ["executive", "student", "casual"])
-    def test_returns_non_empty(
-        self, dummy_models, sample_text, persona_presets, persona
-    ):
+    def test_returns_non_empty(self, dummy_models, sample_text, persona_presets, persona):
         summarizer, _ = dummy_models
         preset = persona_presets[persona]
         result = summarize_with_persona(
@@ -53,9 +50,7 @@ class TestSummaryWordcount:
     """Word count must fall within loose persona-specific bounds."""
 
     @pytest.mark.parametrize("persona", ["executive", "student", "casual"])
-    def test_wordcount_in_bounds(
-        self, dummy_models, sample_text, persona_presets, persona
-    ):
+    def test_wordcount_in_bounds(self, dummy_models, sample_text, persona_presets, persona):
         summarizer, _ = dummy_models
         preset = persona_presets[persona]
         summary = summarize_with_persona(
@@ -69,18 +64,14 @@ class TestSummaryWordcount:
         )
         wc = _word_count(summary)
         lo, hi = WORD_BOUNDS[persona]
-        assert lo <= wc <= hi, (
-            f"[{persona}] word count {wc} outside [{lo}, {hi}]"
-        )
+        assert lo <= wc <= hi, f"[{persona}] word count {wc} outside [{lo}, {hi}]"
 
 
 class TestSentimentOutput:
     """sentiment_for_text must return (label: str, score: float) in expected range."""
 
     @pytest.mark.parametrize("persona", ["executive", "student", "casual"])
-    def test_label_and_score(
-        self, dummy_models, sample_text, persona_presets, persona
-    ):
+    def test_label_and_score(self, dummy_models, sample_text, persona_presets, persona):
         summarizer, sentiment_model = dummy_models
         preset = persona_presets[persona]
         summary = summarize_with_persona(

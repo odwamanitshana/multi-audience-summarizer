@@ -1,10 +1,8 @@
 transformers
 torch
-sentence-transformers
 gradio
 newspaper3k
 requests
-python-dotenv
 pytest
 
 # --- Pinned dev / CI versions (optional but recommended) ---

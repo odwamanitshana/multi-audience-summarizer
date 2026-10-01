@@ -33,13 +33,119 @@ TODO: Abstract URL extraction and add rate-limit handling.
 
 from __future__ import annotations
 
+import html
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import gradio as gr
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Ink & Signal theme (shared visual direction)
+# ---------------------------------------------------------------------------
+INK_SIGNAL_CSS = """
+.gradio-container {
+  max-width: 1200px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+.ink-muted { color: #5B6470 !important; font-size: 0.875rem; }
+.ink-meta.mono-data, .ink-meta.mono-data * {
+  font-family: "IBM Plex Mono", ui-monospace, monospace !important;
+  font-variant-numeric: tabular-nums;
+}
+.persona-card {
+  border: 1px solid #E2E0DA;
+  border-radius: 6px;
+  padding: 1rem 1.1rem;
+  background: #FFFFFF;
+  min-height: 120px;
+}
+.persona-card .persona-label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: #5B6470;
+  margin: 0 0 0.75rem 0;
+}
+.persona-card .persona-summary {
+  color: #1A1814;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin: 0 0 0.75rem 0;
+}
+.persona-card .sentiment-chip {
+  display: inline-block;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid #E2E0DA;
+}
+.persona-card .sentiment-positive {
+  color: #1F7A6D;
+  border-color: #1F7A6D;
+  background: #F0FAF8;
+}
+.persona-card .sentiment-negative {
+  color: #B42318;
+  border-color: #B42318;
+  background: #FEF3F2;
+}
+.persona-card .sentiment-neutral {
+  color: #5B6470;
+  border-color: #E2E0DA;
+  background: #F6F5F1;
+}
+.ink-alert {
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  border-width: 1px;
+  border-style: solid;
+}
+.ink-alert-error { color: #B42318; border-color: #B42318; background: #FEF3F2; }
+.ink-alert-warning { color: #9A6212; border-color: #9A6212; background: #FFFAF0; }
+"""
+
+INK_SIGNAL_THEME = gr.themes.Base(
+    primary_hue=gr.themes.Color(
+        c50="#FBF1EC",
+        c100="#F4DCD0",
+        c200="#E9B9A2",
+        c300="#DD9573",
+        c400="#D9774E",
+        c500="#B5522A",
+        c600="#9C4523",
+        c700="#80391D",
+        c800="#642C16",
+        c900="#4A2010",
+        c950="#2E140A",
+    ),
+    neutral_hue="stone",
+    font=[gr.themes.GoogleFont("IBM Plex Sans"), "system-ui", "sans-serif"],
+    font_mono=[gr.themes.GoogleFont("IBM Plex Mono"), "ui-monospace", "monospace"],
+    radius_size=gr.themes.sizes.radius_sm,
+).set(
+    body_background_fill="#F6F5F1",
+    body_text_color="#1A1814",
+    block_border_color="#E2E0DA",
+    button_primary_background_fill="#B5522A",
+    button_primary_background_fill_hover="#9C4523",
+    button_primary_text_color="#FFFFFF",
+)
+
+_PERSONA_ORDER = ("Executive", "Student", "Casual")
+_EMPTY_PLACEHOLDER = '<p class="ink-muted">Summaries will appear here.</p>'
+_PERSONA_INFO = (
+    "Executive: ~3 sentences on impact & risk · "
+    "Student: structured, explains jargon · "
+    "Casual: short and plain"
+)
 
 # ---------------------------------------------------------------------------
 # Robust backend imports — fall back gracefully if something is missing
@@ -47,7 +153,6 @@ logger = logging.getLogger(__name__)
 try:
     from app import (
         PERSONA_PRESETS,
-        PERSONA_TEMPLATES,
         load_models,
         sentiment_for_text,
         summarize_with_persona,
@@ -62,16 +167,11 @@ except ImportError as exc:
 try:
     from helpers import (
         chunk_and_summarize,
-        estimate_token_count,
         extract_article_from_url,
         safe_load_models,
     )
 except ImportError:
-    # helpers.py missing — define inline stubs so the UI still works.
     logger.warning("helpers.py not found; chunking and URL extraction disabled.")
-
-    def estimate_token_count(text: str) -> int:  # type: ignore[misc]
-        return int(len(text.split()) * 1.3)
 
     def chunk_and_summarize(*a: Any, **kw: Any) -> str:  # type: ignore[misc]
         return ""
@@ -79,45 +179,32 @@ except ImportError:
     def extract_article_from_url(url: str) -> str:  # type: ignore[misc]
         return ""
 
-    def safe_load_models(device: Any = None) -> Tuple[Any, Any]:  # type: ignore[misc]
+    def safe_load_models(device: Any = None) -> tuple[Any, Any]:  # type: ignore[misc]
         return load_models(device=device)
 
 
-# ---------------------------------------------------------------------------
-# Fallback presets (used only when PERSONA_PRESETS is unavailable)
-# ---------------------------------------------------------------------------
-_DEFAULT_PRESETS: Dict[str, Dict[str, float]] = {
+_DEFAULT_PRESETS: dict[str, dict[str, float]] = {
     "executive": {"max_length": 110, "min_length": 40, "num_beams": 4, "length_penalty": 1.0},
-    "student":   {"max_length": 200, "min_length": 80, "num_beams": 4, "length_penalty": 0.9},
-    "casual":    {"max_length": 60,  "min_length": 15, "num_beams": 2, "length_penalty": 1.2},
+    "student": {"max_length": 200, "min_length": 80, "num_beams": 4, "length_penalty": 0.9},
+    "casual": {"max_length": 60, "min_length": 15, "num_beams": 2, "length_penalty": 1.2},
 }
 
-# Threshold (in words) above which we use chunk-then-aggregate summarisation.
 _LONG_INPUT_WORD_THRESHOLD: int = 3000
 
-
-# ---------------------------------------------------------------------------
-# Globals — models are loaded lazily on first Summarize click
-# ---------------------------------------------------------------------------
 _summarizer: Any = None
 _sentiment_model: Any = None
 
 
-def _ensure_models() -> Tuple[Any, Any]:
-    """Load models once on first call (lazy init keeps startup fast)."""
+def _ensure_models() -> tuple[Any, Any]:
     global _summarizer, _sentiment_model
     if _summarizer is None or _sentiment_model is None:
         _summarizer, _sentiment_model = safe_load_models()
     return _summarizer, _sentiment_model
 
 
-# ---------------------------------------------------------------------------
-# Load example inputs from samples file
-# ---------------------------------------------------------------------------
-def _load_examples(max_examples: int = 3) -> List[List[str]]:
-    """Read the first non-URL, non-empty lines from sample_articles.txt."""
+def _load_examples(max_examples: int = 3) -> list[list[str]]:
     sample_path = Path("samples") / "sample_articles.txt"
-    examples: List[List[str]] = []
+    examples: list[list[str]] = []
     if sample_path.exists():
         for line in sample_path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
@@ -136,146 +223,177 @@ def _load_examples(max_examples: int = 3) -> List[List[str]]:
     return examples
 
 
-# ---------------------------------------------------------------------------
-# Sentiment badge helper
-# ---------------------------------------------------------------------------
-def _sentiment_badge(label: str, score: float) -> str:
-    """Return colour-coded HTML for a sentiment result.
+def _empty_results() -> tuple[str, str, str, str]:
+    return (_EMPTY_PLACEHOLDER, "", "", "")
 
-    Colour key:
-      POSITIVE → ✅ green
-      NEGATIVE → ❌ red
-      other    → ⚠️  grey
-    """
+
+def _alert_html(message: str, kind: str) -> str:
+    safe = html.escape(message)
+    css_class = "ink-alert-error" if kind == "error" else "ink-alert-warning"
+    return f'<div class="ink-alert {css_class}">{safe}</div>'
+
+
+def _sentiment_chip(label: str, score: float) -> str:
     if label == "POSITIVE":
-        emoji, colour = "✅", "#2e7d32"
+        css = "sentiment-positive"
+        text = f"Positive · {score:.2f}"
     elif label == "NEGATIVE":
-        emoji, colour = "❌", "#c62828"
+        css = "sentiment-negative"
+        text = f"Negative · {score:.2f}"
     else:
-        emoji, colour = "⚠️", "#757575"
+        css = "sentiment-neutral"
+        text = f"Neutral · {score:.2f}"
+    return f'<span class="sentiment-chip {css}">{html.escape(text)}</span>'
+
+
+def _persona_card_html(
+    persona_label: str,
+    body_html: str,
+    *,
+    selected: bool,
+) -> str:
+    label = persona_label.upper()
+    if not selected:
+        inner = '<p class="ink-muted" style="margin:0">Not selected for this run.</p>'
+    else:
+        inner = body_html
     return (
-        f'<span style="color:{colour}; font-weight:600">'
-        f"{emoji} {label} — {score:.2f}</span>"
+        f'<div class="persona-card"><p class="persona-label">{html.escape(label)}</p>{inner}</div>'
     )
 
 
-# ---------------------------------------------------------------------------
-# Core handler wired to the Summarize button
-# ---------------------------------------------------------------------------
+def _summarize_one_persona(
+    text: str,
+    persona_label: str,
+    summarizer: Any,
+    sentiment_model: Any,
+    *,
+    is_long: bool,
+    presets: dict[str, dict[str, float]],
+) -> str:
+    persona = persona_label.lower()
+    preset = presets.get(persona, {})
+
+    try:
+        if is_long:
+            summary = chunk_and_summarize(
+                text,
+                persona,
+                summarizer,
+                persona_preset=preset,
+            )
+        else:
+            summary = summarize_with_persona(
+                summarizer,
+                text,
+                persona,
+                max_length=int(preset.get("max_length", 150)),
+                min_length=int(preset.get("min_length", 30)),
+                num_beams=int(preset.get("num_beams", 4)),
+                length_penalty=float(preset.get("length_penalty", 1.0)),
+            )
+    except Exception as exc:
+        logger.exception("Summarisation failed for persona '%s'", persona)
+        return _alert_html(f"Summarisation failed for {persona_label}: {exc}", "error")
+
+    if summary and summary.startswith("[Error"):
+        return _alert_html(summary.strip("[]"), "error")
+
+    try:
+        label, score = sentiment_for_text(
+            sentiment_model,
+            summary if summary and "[Error" not in summary else text,
+        )
+    except Exception:
+        label, score = "UNKNOWN", 0.0
+
+    chip = _sentiment_chip(label, score)
+    summary_safe = html.escape(summary or "").replace("\n", "<br>")
+    return f'<p class="persona-summary">{summary_safe}</p><div class="mono-data">{chip}</div>'
+
+
 def summarize_handler(
     article_text: str,
     url_text: str,
-    selected_personas: List[str],
-) -> str:
-    """Run summarisation + sentiment for each selected persona, return HTML.
-
-    If *article_text* is empty but *url_text* is provided, attempt to
-    extract the article body via newspaper3k.
-    """
-    # ---- resolve input text ------------------------------------------------
+    selected_personas: list[str],
+) -> tuple[str, str, str, str]:
+    """Run summarisation for each persona column; return meta + three card HTML strings."""
     text = (article_text or "").strip()
 
     if not text and url_text and url_text.strip():
         text = extract_article_from_url(url_text.strip())
         if not text:
-            return (
-                "<p style='color:orange'>⚠️ Could not extract text from the URL. "
-                "Please paste the article text directly.</p>"
+            gr.Warning("Could not extract text from the URL. Paste the article text directly.")
+            alert = _alert_html(
+                "Could not extract text from the URL. Paste the article text directly.",
+                "warning",
             )
+            return (alert + _EMPTY_PLACEHOLDER, "", "", "")
 
     if not text:
-        return "<p style='color:red'>⚠️ Please paste some article text first.</p>"
+        gr.Warning("Please paste some article text first.")
+        return _empty_results()
 
-    # ---- resolve personas --------------------------------------------------
     if not selected_personas:
-        selected_personas = ["Executive", "Student", "Casual"]
+        selected_personas = list(_PERSONA_ORDER)
 
     try:
         summarizer, sentiment_model = _ensure_models()
     except Exception as exc:
         logger.exception("Model loading failed")
-        return (
-            f"<p style='color:red'>❌ Failed to load models: {exc}<br>"
-            "Make sure dependencies are installed and check the console log.</p>"
-        )
+        raise gr.Error(
+            f"Failed to load models: {exc}. "
+            "Check that dependencies are installed and see the console log."
+        ) from exc
 
-    # ---- word count & long-input notice ------------------------------------
     word_count = len(text.split())
     is_long = word_count > _LONG_INPUT_WORD_THRESHOLD
-
-    parts: List[str] = [
-        f"<p><b>Original word count:</b> {word_count}"
-        + (" ⚠️ <em>Long input — chunked summarisation enabled</em>" if is_long else "")
-        + "</p>"
-        "<p style='font-size:0.85em;color:#888'>"
-        "ℹ️ Sentiment is applied to the generated summary and is only an approximation."
-        "</p><hr>"
+    long_note = " · Long input — chunked summarisation enabled" if is_long else ""
+    meta_parts = [
+        '<div class="ink-meta mono-data">',
+        f"<p><strong>Original word count:</strong> {word_count}{long_note}</p>",
+        '<p class="ink-muted" style="margin-top:0.35rem">'
+        "Sentiment is applied to each generated summary and is only an approximation."
+        "</p>",
+        "</div>",
     ]
+    meta_html = "\n".join(meta_parts)
 
     presets = PERSONA_PRESETS if PERSONA_PRESETS else _DEFAULT_PRESETS
+    selected_set = {p for p in selected_personas}
 
-    for persona_label in selected_personas:
-        persona = persona_label.lower()
-        preset = presets.get(persona, {})
-
-        try:
-            if is_long:
-                # Chunk + aggregate for very long articles.
-                summary = chunk_and_summarize(
-                    text,
-                    persona,
-                    summarizer,
-                    persona_preset=preset,
-                )
-            else:
-                summary = summarize_with_persona(
-                    summarizer,
-                    text,
-                    persona,
-                    max_length=int(preset.get("max_length", 150)),
-                    min_length=int(preset.get("min_length", 30)),
-                    num_beams=int(preset.get("num_beams", 4)),
-                    length_penalty=float(preset.get("length_penalty", 1.0)),
-                )
-        except Exception as exc:
-            logger.exception("Summarisation failed for persona '%s'", persona)
-            summary = f"[Error: {exc}]"
-
-        # Sentiment on the generated summary (or original text as fallback).
-        try:
-            label, score = sentiment_for_text(
-                sentiment_model, summary if summary and "[Error" not in summary else text
-            )
-        except Exception:
-            label, score = "UNKNOWN", 0.0
-
-        badge = _sentiment_badge(label, score)
-
-        parts.append(
-            f"<h3>📌 {persona_label.title()}</h3>"
-            f"<p>{summary}</p>"
-            f"<p><b>Sentiment:</b> {badge}</p>"
-            f"<hr>"
+    cards: dict[str, str] = {}
+    for persona_label in _PERSONA_ORDER:
+        if persona_label not in selected_set:
+            cards[persona_label] = _persona_card_html(persona_label, "", selected=False)
+            continue
+        body = _summarize_one_persona(
+            text,
+            persona_label,
+            summarizer,
+            sentiment_model,
+            is_long=is_long,
+            presets=presets,
         )
+        cards[persona_label] = _persona_card_html(persona_label, body, selected=True)
 
-    return "\n".join(parts)
+    return (
+        meta_html,
+        cards["Executive"],
+        cards["Student"],
+        cards["Casual"],
+    )
 
 
-# ---------------------------------------------------------------------------
-# Build Gradio interface
-# ---------------------------------------------------------------------------
 def build_ui() -> gr.Blocks:
     """Construct and return the Gradio Blocks app."""
-    # NOTE: theme is intentionally omitted here and passed to launch()
-    # instead, for Gradio 6+ compatibility (see module docstring).
     with gr.Blocks(
         title="Multi-Audience Summarizer",
     ) as app:
         gr.Markdown(
-            "## 📝 Multi-Audience Summarizer\n"
-            "Paste an article (or provide a URL) and get persona-specific "
-            "summaries with sentiment analysis.\n\n"
-            "*⚡ Models download on first click (~1.5 GB). Subsequent runs are fast.*"
+            "# Multi-Audience Summarizer\n"
+            "Paste an article or URL. Get an executive brief, study notes and a casual "
+            "recap, each with a tone check."
         )
 
         with gr.Row():
@@ -292,30 +410,32 @@ def build_ui() -> gr.Blocks:
                     lines=1,
                 )
                 persona_select = gr.CheckboxGroup(
-                    choices=["Executive", "Student", "Casual"],
-                    value=["Executive", "Student", "Casual"],
+                    choices=list(_PERSONA_ORDER),
+                    value=list(_PERSONA_ORDER),
                     label="Personas",
+                    info=_PERSONA_INFO,
                 )
-                btn = gr.Button(
-                    "🚀 Summarize",
-                    variant="primary",
+                btn = gr.Button("Summarise", variant="primary")
+                gr.Markdown(
+                    '<p class="ink-muted">First run downloads ~1.5 GB of models; later runs are fast.</p>'
                 )
                 gr.Markdown(
-                    "<small>⏳ The button will show a spinner while processing. "
-                    "Long articles are automatically chunked.</small>"
+                    '<p class="ink-muted">Long articles are chunked automatically while processing.</p>'
                 )
 
             with gr.Column(scale=3):
-                output_html = gr.HTML(label="Results")
+                results_meta = gr.HTML(value=_EMPTY_PLACEHOLDER, label="Results")
+                with gr.Row():
+                    out_executive = gr.HTML("")
+                    out_student = gr.HTML("")
+                    out_casual = gr.HTML("")
 
-        # Wire button click
         btn.click(
             fn=summarize_handler,
             inputs=[article_box, url_box, persona_select],
-            outputs=output_html,
+            outputs=[results_meta, out_executive, out_student, out_casual],
         )
 
-        # Example inputs
         gr.Examples(
             examples=_load_examples(max_examples=3),
             inputs=[article_box],
@@ -325,17 +445,12 @@ def build_ui() -> gr.Blocks:
     return app
 
 
-# ---------------------------------------------------------------------------
-# Entrypoint
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     ui = build_ui()
-    # Bind to 127.0.0.1 (not 0.0.0.0) to prevent Gradio's internal httpx
-    # self-check from being intercepted by a system HTTP proxy on Windows.
-    # Theme is passed here — Gradio 6+ expects it in launch(), not Blocks().
     ui.launch(
         server_name="127.0.0.1",
         server_port=7860,
         share=False,
-        theme=gr.themes.Soft(),
+        theme=INK_SIGNAL_THEME,
+        css=INK_SIGNAL_CSS,
     )
