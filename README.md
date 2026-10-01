@@ -2,11 +2,9 @@
 
 Summarise one article three ways (exec brief, study notes, casual recap) and see the tone of each.
 
-![Multi-Audience Summarizer — main UI](assets/screenshot_main.png)
+![Multi-Audience Summarizer — results with three persona cards](assets/screenshot_results.png)
 
-| Main UI | Results (three persona cards) |
-|---------|-------------------------------|
-| ![Main UI](assets/screenshot_main.png) | ![Results](assets/screenshot_results.png) |
+![Multi-Audience Summarizer — main UI (empty state)](assets/screenshot_main.png)
 
 Persona-aware article summarisation with a Gradio web UI, chunked long-input support, and CI via GitHub Actions.
 
