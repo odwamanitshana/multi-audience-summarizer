@@ -1,14 +1,14 @@
 # Multi-Audience Summarizer
 
-A minimal Python prototype that summarizes articles for different audiences (executive, student, casual) and reports sentiment. Includes a Gradio web UI, chunked long-input support, and CI via GitHub Actions.
+Summarise one article three ways (exec brief, study notes, casual recap) and see the tone of each.
 
-## Project idea (one line)
-Summarize the same article in different tones for different audiences and add a quick sentiment snapshot.
+![Multi-Audience Summarizer — main UI](assets/screenshot_main.png)
 
-## MVP
-- Load a summarization model and a sentiment model
-- Generate persona-based summaries from the same input
-- Print sentiment labels/scores for each persona summary
+| Main UI | Results (three persona cards) |
+|---------|-------------------------------|
+| ![Main UI](assets/screenshot_main.png) | ![Results](assets/screenshot_results.png) |
+
+Persona-aware article summarisation with a Gradio web UI, chunked long-input support, and CI via GitHub Actions.
 
 ---
 
@@ -67,7 +67,7 @@ python app.py --save-outputs
 
 ## First-run model downloads
 
-The **first Summarize click** in the Gradio UI (or the first CLI run) will download approximately **~1.5 GB** of HuggingFace model data:
+The **first Summarise click** in the Gradio UI (or the first CLI run) will download approximately **~1.5 GB** of HuggingFace model data:
 
 - Summarizer: `sshleifer/distilbart-cnn-12-6`
 - Sentiment: `distilbert-base-uncased-finetuned-sst-2-english`
@@ -117,37 +117,22 @@ the summarisation model without editing code:
 ```powershell
 # Windows PowerShell
 $env:DEMO_MODEL = "philschmid/bart-large-cnn-samsum"   # smaller / faster
-.\.venv\Scripts\python.exe app_gradio.py
+python app_gradio.py
 ```
 
 ```bash
 # macOS / Linux
-DEMO_MODEL="philschmid/bart-large-cnn-samsum" python app_gradio.py
+export DEMO_MODEL="philschmid/bart-large-cnn-samsum"
+python app_gradio.py
 ```
 
-> The default model is `sshleifer/distilbart-cnn-12-6` (~1.2 GB).
-> Any HuggingFace `text2text-generation` or `summarization` pipeline-compatible
-> model string works.
+> **Note:** `DEMO_MODEL` is documented for deployment flexibility. Wiring it into
+> `app.py` is optional — the default model is `sshleifer/distilbart-cnn-12-6`.
 >
 > **To wire `DEMO_MODEL` into the codebase**, add
 > `os.environ.get("DEMO_MODEL", "sshleifer/distilbart-cnn-12-6")` where
 > `load_models()` is called in `app.py`. See [UI_HINTS.md](UI_HINTS.md) for
 > additional snippets.
-
----
-
-## Demo
-
-<!-- Replace the placeholder below once you capture real assets (see assets/demo_placeholder.md) -->
-
-![Demo GIF](assets/demo.gif)
-
-> **No GIF yet?** See [assets/demo_placeholder.md](assets/demo_placeholder.md) for
-> recording instructions using ScreenToGif, Peek, or ShareX.
-
-| Main UI | Results |
-|---------|---------|
-| ![Main](assets/screenshot_main.png) | ![Results](assets/screenshot_results.png) |
 
 ---
 
@@ -168,3 +153,7 @@ DEMO_MODEL="philschmid/bart-large-cnn-samsum" python app_gradio.py
 - Tests are fully mocked — no GPU or model downloads needed for `pytest`.
 - Long articles (>3 000 words) are automatically chunked and summarized in multiple passes.
 - Historical process notes live under [docs/archive/](docs/archive/).
+
+---
+
+Built by [Odwa Manitshana, Software Developer & Automation Engineer](https://github.com/odwamanitshana)
