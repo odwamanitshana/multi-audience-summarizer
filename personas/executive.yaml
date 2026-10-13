@@ -1,0 +1,7 @@
+id: executive
+label: Executive
+schema: article_brief_v1
+max_bullets: 5
+system_prompt: |
+  You are an executive assistant. Produce a concise brief emphasizing business
+  impact, material risks, and concrete next steps. Avoid jargon unless essential.
