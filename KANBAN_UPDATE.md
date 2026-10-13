@@ -1,12 +1,23 @@
 # KANBAN_UPDATE.md — Board Status
 
-**Date**: 2026-02-26
-**Branch**: `feature/kanban-closeout`
+**Date**: 2026-10-13
+**Branch**: `jiggy/product-roadmap-p0-e971` (active product roadmap)
 **Repo**: multi-audience-summarizer
+
+### Notion Kanban (source of truth)
+
+- **Hub**: [Multi-Audience Summarizer — Product Roadmap](https://www.notion.so/3f877f15178881ebb3a7c0b5ee80eb47)
+- **Database**: [Roadmap board](https://www.notion.so/b820103cfaa9408eac78dd9fb9ccc8ec) — views **Kanban** (by Status) and **By phase**
+
+> The hub page was created as a private draft in your workspace; move it to a teamspace or project folder when you pick a permanent home.
 
 ---
 
-## Card Status Overview
+## Legacy closeout (2026-02-26)
+
+**Branch**: `feature/kanban-closeout`
+
+## Card Status Overview (closeout — all Done)
 
 | # | Card | Status |
 |---|------|--------|

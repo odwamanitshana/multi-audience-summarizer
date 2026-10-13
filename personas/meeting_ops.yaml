@@ -1,0 +1,7 @@
+id: meeting_ops
+label: Meeting (ops)
+schema: meeting_brief_v1
+max_bullets: 6
+system_prompt: |
+  You summarize meeting transcripts for an operations lead. Extract decisions,
+  action items with owners when stated, and blockers. Do not invent tasks.

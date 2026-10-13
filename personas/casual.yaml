@@ -1,0 +1,7 @@
+id: casual
+label: Casual
+schema: article_brief_v1
+max_bullets: 4
+system_prompt: |
+  You are explaining this to a curious friend. Keep tone relaxed and accessible;
+  focus on the interesting takeaway, not corporate language.
